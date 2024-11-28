@@ -1,4 +1,4 @@
-- 👋 Hi, I’m @FlorianKainz82
+- 👋 Hi, I’m @flor-kain-scacap
 - 👀 I’m interested in stock market
 - 🌱 I’m currently learning everyday
 - 💞️ I’m looking to collaborate on interesting projects
