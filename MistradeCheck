@@ -1,0 +1,77 @@
+import pandas as pd
+import os
+from datetime import datetime
+from typing import List, Optional
+
+DEFAULT_FOLDER = r"C:\Users\Trading\Downloads"
+
+def get_folder_path(prompt: str) -> str:
+    while True:
+        folder_path = input(prompt).strip()
+        if os.path.exists(folder_path):
+            return folder_path
+        print("The specified folder does not exist. Please try again.")
+
+def list_csv_files(folder: str) -> List[str]:
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    return [
+        file for file in os.listdir(folder)
+        if file.endswith('.csv') and
+        datetime.fromtimestamp(os.path.getmtime(os.path.join(folder, file))).strftime("%Y-%m-%d") == current_date
+    ]
+
+def select_csv_file(csv_files: List[str]) -> Optional[str]:
+    if csv_files:
+        print("CSV files downloaded today:")
+        for idx, file in enumerate(csv_files, start=1):
+            print(f"{idx}. {file}")
+        while True:
+            choice = input("Select a file by number or enter a different file name: ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(csv_files):
+                return csv_files[int(choice) - 1]
+            elif choice:
+                return choice
+            print("Invalid input. Please try again.")
+    else:
+        return input("Please enter the CSV file name (including .csv extension): ").strip()
+
+def main():
+    # Ask for the folder where the CSV file is located
+    use_default = input(f"Use the default folder ({DEFAULT_FOLDER})? (yes/no): ").strip().lower()
+    csv_folder = DEFAULT_FOLDER if use_default == 'yes' else get_folder_path("Enter the folder path for the CSV file: ")
+
+    # List and select CSV files
+    csv_files = list_csv_files(csv_folder)
+    csv_file_name = select_csv_file(csv_files)
+    csv_file_path = os.path.join(csv_folder, csv_file_name)
+
+    # Check if the CSV file exists
+    if not os.path.isfile(csv_file_path):
+        print("The specified CSV file does not exist. Please check the file name and try again.")
+        return
+
+    # Suggest the same folder for saving Excel files
+    use_same_folder = input(f"Save Excel files in the same folder ({csv_folder})? (yes/no): ").strip().lower()
+    excel_folder = csv_folder if use_same_folder == 'yes' else get_folder_path("Enter the folder path for Excel files: ")
+
+    # Read the CSV file
+    df = pd.read_csv(csv_file_path)
+
+    # Split the data based on the 'is_suspected_mistrade' column
+    df_true = df[df['is_suspected_mistrade'] == True]
+    df_false = df[df['is_suspected_mistrade'] == False]
+
+    # Get the current date and time
+    current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    # Save the dataframes to separate Excel files with the current date and time in the filename
+    true_excel_path = os.path.join(excel_folder, f'suspected_mistrades_{current_datetime}.xlsx')
+    false_excel_path = os.path.join(excel_folder, f'non_suspected_mistrades_{current_datetime}.xlsx')
+
+    df_true.to_excel(true_excel_path, index=False, engine='openpyxl')
+    df_false.to_excel(false_excel_path, index=False, engine='openpyxl')
+
+    print(f"Excel files have been saved to:\n- {true_excel_path}\n- {false_excel_path}")
+
+if __name__ == "__main__":
+    main()
